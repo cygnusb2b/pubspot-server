@@ -17,9 +17,7 @@ node {
 
     stage("Copy Artifacts") {
         if (!env.BRANCH_NAME.contains('PR-')) {
-            step([$class: 'ArtifactArchiver', artifacts: 'Dockerfile'])
-            step([$class: 'ArtifactArchiver', artifacts: 'httpd.conf'])
-            step([$class: 'ArtifactArchiver', artifacts: 'dist/**'])
+            step([$class: 'ArtifactArchiver', artifacts: '**'])
         }
     }
 }
