@@ -1,4 +1,4 @@
-FROM mhart/alpine-node:6
+FROM scomm/node-build:latest
 MAINTAINER solocommand
 WORKDIR /app
 COPY . /app
