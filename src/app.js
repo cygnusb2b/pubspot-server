@@ -7,6 +7,7 @@ const databases = require('./db');
 const loadErrorHandlers = require('./error-handlers');
 
 const app = express();
+const rootRouter = express.Router();
 const port = process.env.PORT || 8100;
 
 // @see https://expressjs.com/en/advanced/best-practice-security.html#use-helmet
@@ -29,8 +30,10 @@ app.use(bodyParser.json({
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/rest', require('./api'));
-app.use('/segment', require('./segment'));
+rootRouter.use('/rest', require('./api'));
+rootRouter.use('/segment', require('./segment'));
+
+app.use('/api', rootRouter);
 
 loadErrorHandlers(app);
 
