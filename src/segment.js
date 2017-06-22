@@ -5,52 +5,63 @@ const searchCriteria = require('./segment/search-criteria');
 
 const router = express.Router();
 
+function isSegmentTypeValid(type, next) {
+  if (!Object.keys(searchCriteria).includes(type)) {
+    next(null, httpError(400, `The provided segment type '${type}' is not supported.`));
+    return false;
+  }
+  return true;
+}
+
+function createSegmentLabel(type) {
+  return type.split('-').map(part => part.charAt(0).toUpperCase() + part.substr(1)).join(' ');
+}
+
 function getBaseDb() {
   return dbConns.selectDb('legacy', 'base_cygnus_ofcr');
 }
 
-router.get('/section/:id', (req, res, next) => {
+router.get('/retrieve/:type/:id', (req, res, next) => {
   const id = Number(req.params.id);
-  const collection = getBaseDb().collection('Section');
-  collection.findOneAsync({ _id: id })
-    .then((result) => {
-      if (result) {
-        if (result.channel) {
-          // eslint-disable-next-line no-param-reassign
-          result.type = `${result.type} Channel`;
+  const type = req.params.type;
+
+  if (isSegmentTypeValid(type, next)) {
+    const criteria = searchCriteria[type];
+    const collection = getBaseDb().collection(criteria.collection);
+
+    collection.findOneAsync({ _id: id })
+      .then((result) => {
+        if (result) {
+          res.json({ data: result, meta: { type, label: createSegmentLabel(type) } });
         } else {
-          // eslint-disable-next-line no-param-reassign
-          result.type = `${result.type} Section`;
+          throw httpError(404, `No record found for ${type} ID: ${id}`);
         }
-        res.json({ data: result });
-      } else {
-        throw httpError(404, `No record found for ID: ${id}`);
-      }
-    })
-    .catch(next)
-  ;
+      })
+      .catch(next)
+    ;
+  }
 });
 
 router.get('/search/:type/:phrase', (req, res, next) => {
   const type = req.params.type;
-  if (!Object.keys(searchCriteria).includes(type)) {
-    next(null, httpError(400, `The provided segment type '${type}' is not supported.`));
-  }
-  const criteria = searchCriteria[type];
-  const collection = getBaseDb().collection(criteria.collection);
-  const query = Object.assign({}, criteria.query);
-  query[criteria.field] = new RegExp(`${req.params.phrase}`, 'i');
-  const projection = {
-    _id: 1,
-    [criteria.field]: 1,
-  };
 
-  collection.find(query)
-    .project(projection)
-    .toArrayAsync()
-    .then(docs => res.json({ data: docs }))
-    .catch(next)
-  ;
+  if (isSegmentTypeValid(type, next)) {
+    const criteria = searchCriteria[type];
+    const collection = getBaseDb().collection(criteria.collection);
+    const query = Object.assign({}, criteria.query);
+    query[criteria.field] = new RegExp(`${req.params.phrase}`, 'i');
+    const projection = {
+      _id: 1,
+      [criteria.field]: 1,
+    };
+
+    collection.find(query)
+      .project(projection)
+      .toArrayAsync()
+      .then(docs => res.json({ data: docs }))
+      .catch(next)
+    ;
+  }
 });
 
 module.exports = router;
