@@ -24,6 +24,7 @@
     "helmet": "^3.6.1",
     "http-errors": "^1.6.1",
     "jsonapi-serializer": "^3.5.3",
-    "mongodb": "^2.2.29"
+    "mongodb": "^2.2.29",
+    "redis": "^2.7.1"
   }
 }
