@@ -29,7 +29,7 @@ function getBaseDb() {
 
 const runReport = promisify((segmentType, segmentId, reportKey, cb) => {
   const pipeline = getPipeline(segmentType, segmentId, reportKey);
-  console.info('pipeline', pipeline);
+  // console.info('pipeline', pipeline);
   if (!pipeline) {
     cb(httpError(400, `The provided report key '${reportKey}' is not supported.`));
   } else {

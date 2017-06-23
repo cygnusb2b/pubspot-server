@@ -66,6 +66,7 @@ module.exports = (segmentType, segmentId, reportKey) => {
         identified: { $sum: { $cond: { if: { $eq: ['$_id.customerId', null] }, then: 0, else: 1 } } },
 
       } },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
       { $project: { date: '$_id', anonymous: 1, identified: 1, _id: 0 } },
     ],
   };
