@@ -4,12 +4,13 @@ const promisify = require('bluebird').promisify;
 const dbConns = require('./db');
 const searchCriteria = require('./segment/search-criteria');
 const getPipeline = require('./segment/report-pipelines');
+const getHook = require('./segment/report-hooks');
 
 const router = express.Router();
 
 function isSegmentTypeValid(type, next) {
   if (!Object.keys(searchCriteria).includes(type)) {
-    next(null, httpError(400, `The provided segment type '${type}' is not supported.`));
+    next(null, httpError(404, `The provided segment type '${type}' was not found.`));
     return false;
   }
   return true;
@@ -29,12 +30,13 @@ function getBaseDb() {
 
 const runReport = promisify((segmentType, segmentId, reportKey, cb) => {
   const pipeline = getPipeline(segmentType, segmentId, reportKey);
+  const hook = getHook(reportKey);
   // console.info('pipeline', pipeline);
   if (!pipeline) {
-    cb(httpError(400, `The provided report key '${reportKey}' is not supported.`));
+    cb(httpError(404, `The provided report key '${reportKey}' was not found.`));
   } else {
     const collection = getAnalyticsDb().collection('content');
-    collection.aggregateAsync(pipeline).then(res => cb(null, res)).catch(cb);
+    collection.aggregateAsync(pipeline).then(hook).then(res => cb(null, res)).catch(cb);
   }
 });
 

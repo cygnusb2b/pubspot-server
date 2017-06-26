@@ -32,6 +32,46 @@ function getBaseMatch(type, identifier) {
 
 module.exports = (segmentType, segmentId, reportKey) => {
   const pipelines = {
+    'user-states': [
+      { $match: getBaseMatch(segmentType, segmentId) },
+      { $match: { 'session.customerId': { $ne: null } } },
+      { $group: {
+        _id: null,
+        users: { $addToSet: '$session.customerId' },
+      } },
+      { $project: { _id: 0 } },
+    ],
+    'user-countries': [
+      { $match: getBaseMatch(segmentType, segmentId) },
+      { $match: { 'session.customerId': { $ne: null } } },
+      { $group: {
+        _id: null,
+        users: { $addToSet: '$session.customerId' },
+      } },
+      { $project: { _id: 0 } },
+    ],
+    'top-users': [
+      { $match: getBaseMatch(segmentType, segmentId) },
+      { $match: { 'session.customerId': { $ne: null } } },
+      { $group: {
+        _id: '$session.customerId',
+        actions: { $sum: 1 },
+      } },
+      { $sort: { actions: -1 } },
+      { $limit: 20 },
+    ],
+    'user-count': [
+      { $match: getBaseMatch(segmentType, segmentId) },
+      { $match: { 'session.customerId': { $ne: null } } },
+      { $group: {
+        _id: '$session.customerId',
+      } },
+      { $group: {
+        _id: null,
+        total: { $sum: 1 },
+      } },
+      { $project: { _id: 0 } },
+    ],
     'session-counts': [
       { $match: getBaseMatch(segmentType, segmentId) },
       { $group: {
