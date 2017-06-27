@@ -1,4 +1,3 @@
-
 function getBaseMatch(type, identifier) {
   // @todo Will need to add dates when a range is eventually sent.
   // createdAt: { $gte: startDate, $lt: endDate },
@@ -20,9 +19,15 @@ function getBaseMatch(type, identifier) {
         action: 'view',
       };
     case 'content-company':
+      // @todo This should query base first for content ids, then run.
       return {
-        'entity.relatedTo.type': 'content',
-        'entity.relatedTo.clientId': identifier,
+        $or: [
+          { clientId: identifier },
+          {
+            'entity.relatedTo.type': 'content',
+            'entity.relatedTo.clientId': identifier,
+          },
+        ],
         action: 'view',
       };
     default:
@@ -32,6 +37,27 @@ function getBaseMatch(type, identifier) {
 
 module.exports = (segmentType, segmentId, reportKey) => {
   const pipelines = {
+    'content-engagement': [
+      { $match: getBaseMatch(segmentType, segmentId) },
+      { $group: {
+        _id: '$clientId',
+        title: { $first: '$entity.keyValues.name' },
+        type: { $first: '$entity.keyValues.contentType' },
+        identified: { $sum: { $cond: { if: { $eq: ['$session.customerId', null] }, then: 0, else: 1 } } },
+        total: { $sum: 1 },
+      } },
+      { $sort: { total: -1 } },
+      { $limit: 250 },
+      { $project: {
+        id: '$_id',
+        _id: 0,
+        type: 1,
+        title: 1,
+        identified: 1,
+        total: 1,
+        pctIdentified: { $divide: ['$identified', '$total'] },
+      } },
+    ],
     'user-demographic': [
       { $match: getBaseMatch(segmentType, segmentId) },
       { $match: { 'session.customerId': { $ne: null } } },
