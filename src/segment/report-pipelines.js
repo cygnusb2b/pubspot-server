@@ -1,5 +1,6 @@
 const promisify = require('bluebird').promisify;
 const httpError = require('http-errors');
+const getBaseDb = require('../db').getBaseDb;
 
 const getBaseMatch = promisify((type, identifier, cb) => {
   // @todo Will need to add dates when a range is eventually sent.
@@ -25,17 +26,27 @@ const getBaseMatch = promisify((type, identifier, cb) => {
       });
       break;
     case 'content-company':
-      // @todo This should query base first for content ids, then run.
-      cb(null, {
-        $or: [
-          { clientId: identifier },
-          {
-            'entity.relatedTo.type': 'content',
-            'entity.relatedTo.clientId': identifier,
-          },
-        ],
-        action: 'view',
-      });
+      getBaseDb().collection('Content')
+        .find({
+          $or: [
+            { _id: identifier },
+            { 'relatedTo.$id': identifier },
+            { company: identifier },
+          ],
+        })
+        .project({ _id: 1 })
+        .toArrayAsync()
+        .then((docs) => {
+          // eslint-disable-next-line no-underscore-dangle
+          const ids = docs.map(doc => doc._id);
+          if (ids.length) {
+            cb(null, { clientId: { $in: ids }, action: 'view' });
+          } else {
+            cb(null, { clientId: null, action: 'none' });
+          }
+        })
+        .catch(cb)
+      ;
       break;
     default:
       cb(null, { action: 'view' });
