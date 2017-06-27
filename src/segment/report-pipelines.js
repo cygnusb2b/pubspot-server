@@ -32,6 +32,15 @@ function getBaseMatch(type, identifier) {
 
 module.exports = (segmentType, segmentId, reportKey) => {
   const pipelines = {
+    'user-demographic': [
+      { $match: getBaseMatch(segmentType, segmentId) },
+      { $match: { 'session.customerId': { $ne: null } } },
+      { $group: {
+        _id: null,
+        users: { $addToSet: '$session.customerId' },
+      } },
+      { $project: { _id: 0 } },
+    ],
     'user-states': [
       { $match: getBaseMatch(segmentType, segmentId) },
       { $match: { 'session.customerId': { $ne: null } } },

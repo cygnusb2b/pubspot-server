@@ -28,9 +28,9 @@ function getBaseDb() {
   return dbConns.selectDb('legacy', 'base_cygnus_ofcr');
 }
 
-const runReport = promisify((segmentType, segmentId, reportKey, cb) => {
+const runReport = promisify((segmentType, segmentId, reportKey, params, cb) => {
   const pipeline = getPipeline(segmentType, segmentId, reportKey);
-  const hook = getHook(reportKey);
+  const hook = getHook(reportKey, params);
   // console.info('pipeline', pipeline);
   if (!pipeline) {
     cb(httpError(404, `The provided report key '${reportKey}' was not found.`));
@@ -45,7 +45,7 @@ router.get('/report/:type/:id/:key', (req, res, next) => {
   const type = req.params.type;
 
   if (isSegmentTypeValid(type, next)) {
-    runReport(type, id, req.params.key).then(data => res.json({ data })).catch(next);
+    runReport(type, id, req.params.key, req.query).then(data => res.json({ data })).catch(next);
   }
 });
 
