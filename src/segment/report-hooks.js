@@ -1,18 +1,7 @@
 const httpError = require('http-errors');
 const promisify = require('bluebird').promisify;
-const dbConns = require('../db');
-
-function getMerrickDb() {
-  return dbConns.selectDb('legacy', 'merrick');
-}
-
-function getOmedaCollection() {
-  return getMerrickDb().collection('omeda_brand_data');
-}
-
-function getUsersCollection() {
-  return getMerrickDb().collection('users_v2');
-}
+const getOmedaCollection = require('../db').getOmedaCollection;
+const getUsersCollection = require('../db').getUsersCollection;
 
 function getDemoraphicLabelFor(id, values) {
   const demoValue = values.find(value => value.Id === Number(id));

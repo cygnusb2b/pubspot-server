@@ -51,7 +51,36 @@ function selectDb(connName, dbName) {
   return getConnection(connName).db(dbName);
 }
 
+function selectCollection(connName, dbName, collName) {
+  return selectDb(connName, dbName).collection(collName);
+}
+
+function getAnalyticsDb() {
+  return selectDb('analytics', 'oly_cygnus_ofcr_events');
+}
+
+function getBaseDb() {
+  return selectDb('legacy', 'base_cygnus_ofcr');
+}
+
+function getMerrickDb() {
+  return selectDb('legacy', 'merrick');
+}
+
+function getOmedaCollection() {
+  return getMerrickDb().collection('omeda_brand_data');
+}
+
+function getUsersCollection() {
+  return getMerrickDb().collection('users_v2');
+}
+
 exports.selectDb = selectDb;
+exports.getAnalyticsDb = getAnalyticsDb;
+exports.getBaseDb = getBaseDb;
+exports.getMerrickDb = getMerrickDb;
+exports.getOmedaCollection = getOmedaCollection;
+exports.getUsersCollection = getUsersCollection;
 
 exports.connect = function connect() {
   if (state.established) {
@@ -71,6 +100,4 @@ exports.connect = function connect() {
   });
 };
 
-exports.selectCollection = function selectCollection(connName, dbName, collName) {
-  return selectDb(connName, dbName).collection(collName);
-};
+exports.selectCollection = selectCollection;

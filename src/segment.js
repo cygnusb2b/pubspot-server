@@ -1,10 +1,11 @@
 const express = require('express');
 const httpError = require('http-errors');
 const promisify = require('bluebird').promisify;
-const dbConns = require('./db');
 const searchCriteria = require('./segment/search-criteria');
 const getPipeline = require('./segment/report-pipelines');
 const getHook = require('./segment/report-hooks');
+const getAnalyticsDb = require('./db').getAnalyticsDb;
+const getBaseDb = require('./db').getBaseDb;
 
 const router = express.Router();
 
@@ -20,24 +21,15 @@ function createSegmentLabel(type) {
   return type.split('-').map(part => part.charAt(0).toUpperCase() + part.substr(1)).join(' ');
 }
 
-function getAnalyticsDb() {
-  return dbConns.selectDb('analytics', 'oly_cygnus_ofcr_events');
-}
-
-function getBaseDb() {
-  return dbConns.selectDb('legacy', 'base_cygnus_ofcr');
-}
-
 const runReport = promisify((segmentType, segmentId, reportKey, params, cb) => {
-  const pipeline = getPipeline(segmentType, segmentId, reportKey);
+  const loadPipeline = getPipeline(segmentType, segmentId, reportKey);
   const hook = getHook(reportKey, params);
-  // console.info('pipeline', pipeline);
-  if (!pipeline) {
-    cb(httpError(404, `The provided report key '${reportKey}' was not found.`));
-  } else {
-    const collection = getAnalyticsDb().collection('content');
+  const collection = getAnalyticsDb().collection('content');
+
+  loadPipeline().then((pipeline) => {
     collection.aggregateAsync(pipeline).then(hook).then(res => cb(null, res)).catch(cb);
-  }
+  })
+  .catch(cb);
 });
 
 router.get('/report/:type/:id/:key', (req, res, next) => {
