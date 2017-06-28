@@ -32,6 +32,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 rootRouter.use('/rest', require('./api'));
 rootRouter.use('/segment', require('./segment'));
+rootRouter.use('/health-check', require('./health-check'));
 
 app.use('/api', rootRouter);
 
